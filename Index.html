@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Fiji Campus Bus &amp; Weather Dashboard</title>
+    <style>
+        /* ----- RESET & BASE STYLES ----- */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(145deg, #e8f0f5 0%, #d4e4ed 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        /* ----- MAIN DASHBOARD CARD ----- */
+        .dashboard {
+            max-width: 1000px;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(8px);
+            border-radius: 32px;
+            padding: 32px 36px 28px;
+            box-shadow: 0 20px 60px rgba(0, 40, 60, 0.20),
+                        0 8px 24px rgba(0, 20, 30, 0.10);
+            border: 1px solid rgba(255, 255, 255, 0.50);
+            transition: all 0.2s ease;
+        }
+
+        /* ----- HEADER ----- */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-bottom: 28px;
+            padding-bottom: 18px;
+            border-bottom: 2px solid rgba(26, 107, 138, 0.20);
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .header-left h1 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #0a3b4f;
+            letter-spacing: -0.5px;
+            line-height: 1.2;
+        }
+
+        .header-left h1 span {
+            color: #2d8f5e;
+        }
+
+        .header-left .emoji-big {
+            font-size: 2.4rem;
+            line-height: 1;
+        }
+
+        .header-sub {
+            font-size: 0.95rem;
+            color: #2d5f7a;
+            font-weight: 500;
+            background: rgba(26, 107, 138, 0.10);
+            padding: 6px 16px;
+            border-radius: 40px;
+            border: 1px solid rgba(26, 107, 138, 0.15);
+        }
+
+        /* ----- GRID LAYOUT (2 columns on desktop) ----- */
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 28px;
+            margin-top: 6px;
+        }
+
+        /* ----- CARDS ----- */
+        .card {
+            background: white;
+            border-radius: 20px;
+            padding: 24px 26px 28px;
+            box-shadow: 0 4px 16px rgba(0, 20, 30, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.60);
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 28px rgba(0, 40, 60, 0.12);
+        }
+
+        .card-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #0a3b4f;
+            margin-bottom: 18px;
+        }
+
+        .card-title .icon {
+            font-size: 1.6rem;
+        }
+
+        /* ----- BUS CALCULATOR ----- */
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            margin-bottom: 18px;
+        }
+
+        .input-group label {
+            font-weight: 500;
+            color: #1a4b5f;
+            font-size: 0.95rem;
+        }
+
+        .input-row {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .input-row input {
+            flex: 1;
+            min-width: 140px;
+            padding: 12px 16px;
+            border: 2px solid #d4e4ed;
+            border-radius: 14px;
+            font-size: 1rem;
+            font-weight: 500;
+            color: #0a3b4f;
+            background: #f8fbfd;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+            outline: none;
+        }
+
+        .input-row input:focus {
+            border-color: #1a6b8a;
+            box-shadow: 0 0 0 4px rgba(26, 107, 138, 0.15);
+            background: white;
+        }
+
+        .input-row input::placeholder {
+            color: #9ab8cc;
+            font-weight: 400;
+        }
+
+        .btn {
+            padding: 12px 28px;
+            background: #1a6b8a;
+            color: white;
+            border: none;
+            border-radius: 14px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s ease, transform 0.1s ease, box-shadow 0.2s ease;
+            box-shadow: 0 4px 12px rgba(26, 107, 138, 0.30);
+            white-space: nowrap;
+        }
+
+        .btn:hover {
+            background: #0f5774;
+            transform: scale(1.02);
+            box-shadow: 0 6px 20px rgba(26, 107, 138, 0.35);
+        }
+
+        .btn:active {
+            transform: scale(0.97);
+        }
+
+        .result-box {
+            background: #f0f7fb;
+            border-radius: 14px;
+            padding: 16px 20px;
+            margin-top: 6px;
+            border-left: 4px solid #2d8f5e;
+        }
+
+        .result-box .rides-number {
+            font-size: 2.2rem;
+            font-weight: 700;
+            color: #0a3b4f;
+            line-height: 1.2;
+        }
+
+        .result-box .rides-label {
+            font-size: 0.95rem;
+            color: #2d5f7a;
+            font-weight: 500;
+        }
+
+        .result-box .rides-detail {
+            font-size: 0.9rem;
+            color: #4a7a94;
+            margin-top: 2px;
+        }
+
+        /* --- Error text style (red) --- */
+        .result-box .error-text {
+            color: #c0392b;
+        }
+
+        .cost-hint {
+            font-size: 0.85rem;
+            color: #4a7a94;
+            margin-top: 8px;
+            padding: 8px 14px;
+            background: #f8fbfd;
+            border-radius: 10px;
+            display: inline-block;
+        }
+
+        /* ----- WEATHER CARD ----- */
+        .weather-loading {
+            color: #4a7a94;
+            font-size: 0.95rem;
+            padding: 10px 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .weather-loading .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #d4e4ed;
+            border-top-color: #1a6b8a;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .weather-data {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .weather-main {
+            display: flex;
+            align-items: center;
+            gap: 18px;
+            flex-wrap: wrap;
+        }
+
+        .weather-temp {
+            font-size: 3rem;
+            font-weight: 700;
+            color: #0a3b4f;
+            line-height: 1;
+        }
+
+        .weather-temp .unit {
+            font-size: 1.6rem;
+            font-weight: 500;
+            color: #4a7a94;
+        }
+
+        .weather-condition {
+            font-size: 1.2rem;
+            font-weight: 500;
+            color: #1a4b5f;
+        }
+
+        .weather-icon-big {
+            font-size: 3.2rem;
+            line-height: 1;
+        }
+
+        .weather-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            gap: 12px;
+            background: #f0f7fb;
+            border-radius: 14px;
+            padding: 14px 18px;
+            margin-top: 4px;
+        }
+
+        .weather-detail-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9rem;
+            color: #1a4b5f;
+        }
+
+        .weather-detail-item .label {
+            font-weight: 400;
+            color: #4a7a94;
+        }
+
+        .weather-detail-item .value {
+            font-weight: 600;
+            color: #0a3b4f;
+        }
+
+        .weather-error {
+            color: #c0392b;
+            padding: 12px 0;
+        }
+
+        .weather-updated {
+            font-size: 0.75rem;
+            color: #7a9aae;
+            margin-top: 10px;
+            text-align: right;
+            border-top: 1px solid rgba(26, 107, 138, 0.10);
+            padding-top: 10px;
+        }
+
+        /* ----- FOOTER ----- */
+        .footer {
+            margin-top: 24px;
+            padding-top: 16px;
+            border-top: 1px solid rgba(26, 107, 138, 0.12);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            font-size: 0.8rem;
+            color: #5a7a8e;
+        }
+
+        .footer .fiji-flag {
+            font-size: 1.1rem;
+        }
+
+        /* ----- RESPONSIVE ----- */
+        @media (max-width: 700px) {
+            .dashboard {
+                padding: 20px 16px 18px;
+            }
+
+            .grid {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+
+            .header-left h1 {
+                font-size: 1.4rem;
+            }
+
+            .header-left .emoji-big {
+                font-size: 1.8rem;
+            }
+
+            .header-sub {
+                font-size: 0.8rem;
+                padding: 4px 12px;
+            }
+
+            .card {
+                padding: 18px 16px 20px;
+            }
+
+            .weather-temp {
+                font-size: 2.4rem;
+            }
+
+            .weather-icon-big {
+                font-size: 2.6rem;
+            }
+
+            .result-box .rides-number {
+                font-size: 1.8rem;
+            }
+
+            .input-row {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .input-row input {
+                min-width: unset;
+                width: 100%;
+            }
+
+            .btn {
+                width: 100%;
+                justify-content: center;
+                text-align: center;
+            }
+
+            .footer {
+                flex-direction: column;
+                text-align: center;
+            }
+        }
+
+        @media (max-width: 400px) {
+            .dashboard {
+                padding: 14px 10px 14px;
+            }
+
+            .header-left h1 {
+                font-size: 1.1rem;
+            }
+
+            .card-title {
+                font-size: 1.05rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="dashboard">
+        <!-- ===== HEADER ===== -->
+        <header class="header">
+            <div class="header-left">
+                <span class="emoji-big">🌴</span>
+                <h1>Fiji Campus <span>Bus</span> &amp; Weather</h1>
+            </div>
+            <div class="header-sub">
+                🏫 USP &bull; Suva
+            </div>
+        </header>
+
+        <!-- ===== GRID ===== -->
+        <div class="grid">
+
+            <!-- ===== LEFT CARD: Bus Fare Calculator ===== -->
+            <section class="card" aria-label="Bus fare calculator">
+                <div class="card-title">
+                    <span class="icon">🚌</span>
+                    Bus Fare Calculator
+                </div>
+
+                <!-- Input: budget -->
+                <div class="input-group">
+                    <label for="budgetInput">Your bus fare budget (FJD):</label>
+                    <div class="input-row">
+                        <input
+                        type="number"
+                        id="budgetInput"
+                        placeholder="e.g. 15.00"
+                        min="0"
+                        step="0.01"
+                        value="10"
+                        />
+                        <button class="btn" id="calcBtn">Calculate rides</button>
+                    </div>
+                </div>
+
+                <!-- Result display -->
+                <div class="result-box" id="resultBox">
+                    <div class="rides-number" id="ridesCount">0</div>
+                    <div class="rides-label">bus ride(s) you can afford</div>
+                    <div class="rides-detail" id="ridesDetail">at $1.50 per ride</div>
+                </div>
+
+                <div class="cost-hint">
+                    💰 Each bus ride costs <strong>$1.50 FJD</strong>
+                </div>
+            </section>
+
+            <!-- ===== RIGHT CARD: Weather ===== -->
+            <section class="card" aria-label="Weather forecast">
+                <div class="card-title">
+                    <span class="icon">☀️</span>
+                    Today's Weather &bull; Suva
+                </div>
+
+                <!-- Weather content will be injected here by JavaScript -->
+                <div id="weatherContainer">
+                    <div class="weather-loading">
+                        <span class="spinner"></span>
+                        Loading weather data…
+                    </div>
+                </div>
+            </section>
+
+        </div>
+
+        <!-- ===== FOOTER ===== -->
+        <footer class="footer">
+            <span class="fiji-flag">🇫🇯 &nbsp; University of the South Pacific</span>
+            <span id="updateTime">Loading…</span>
+        </footer>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- JAVASCRIPT — all logic with explanatory comments              -->
+    <!-- ============================================================ -->
+    <script>
+        /**
+         * ============================================================
+         *  FIJI CAMPUS BUS & WEATHER DASHBOARD — JavaScript
+         *  ============================================================
+         *  This script handles:
+         *    1. Bus fare calculation (budget ÷ $1.50 per ride)
+         *    2. Fetching live weather data for Suva from Open-Meteo
+         *    3. Rendering the weather display with icons
+         *    4. Updating the footer timestamp
+         * ============================================================
+         */
+
+        (function() {
+            'use strict';
+
+            // ----- CONSTANTS -----
+            const RIDE_COST = 1.50; // FJD per bus ride
+            const SUVA_LAT = -18.1416;
+            const SUVA_LON = 178.4419;
+            const TIMEZONE = 'Pacific/Fiji';
+
+            // DOM element references
+            const budgetInput = document.getElementById('budgetInput');
+            const calcBtn = document.getElementById('calcBtn');
+            const ridesCount = document.getElementById('ridesCount');
+            const ridesDetail = document.getElementById('ridesDetail');
+            const resultBox = document.getElementById('resultBox');
+            const weatherContainer = document.getElementById('weatherContainer');
+            const updateTimeEl = document.getElementById('updateTime');
+
+            // ----- HELPER: format currency -----
+            function formatFJD(amount) {
+                return '$' + Number(amount).toFixed(2);
+            }
+
+            // ----- 1. BUS FARE CALCULATOR -----
+            function calculateRides() {
+                // Read and parse the input value as a float
+                const raw = budgetInput.value.trim();
+                const budget = parseFloat(raw);
+
+                // --- MODIFIED VALIDATION: negative or empty (NaN) ---
+                // If the input is empty or not a number, or negative, show error message in red
+                if (raw === '' || isNaN(budget) || budget < 0) {
+                    // Display the red error message in the detail area
+                    ridesCount.textContent = '—';
+                    ridesCount.className = 'rides-number error-text'; // makes number red
+                    ridesDetail.textContent = 'Please enter a valid positive dollar amount.';
+                    ridesDetail.className = 'rides-detail error-text'; // makes message red
+                    return;
+                }
+
+                // --- Valid budget: compute rides ---
+                // Clear any previous error styling
+                ridesCount.className = 'rides-number';
+                ridesDetail.className = 'rides-detail';
+
+                const rides = Math.floor(budget / RIDE_COST);
+                const remaining = budget - (rides * RIDE_COST);
+
+                // Update the result display
+                ridesCount.textContent = rides;
+
+                let detailMsg = 'at ' + formatFJD(RIDE_COST) + ' per ride';
+                if (rides > 0) {
+                    detailMsg += ' · leftover ' + formatFJD(remaining);
+                } else if (budget > 0 && rides === 0) {
+                    detailMsg = 'Not enough for one ride (need ' + formatFJD(RIDE_COST) + ')';
+                } else if (budget === 0) {
+                    detailMsg = 'Enter a budget above 0 to see rides.';
+                }
+                ridesDetail.textContent = detailMsg;
+            }
+
+            // ----- EVENT: Calculate on button click -----
+            calcBtn.addEventListener('click', calculateRides);
+
+            // ----- EVENT: Calculate on Enter key in the input field -----
+            budgetInput.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    calculateRides();
+                }
+            });
+
+            // Run once on page load with the default input value
+            calculateRides();
+
+            // ----- 2. WEATHER FETCHING -----
+
+            /**
+             * Map Open-Meteo WMO weather codes to human-readable
+             * descriptions and emoji icons.
+             * @param {number} code - WMO weather code
+             * @returns {object} { description, emoji }
+             */
+            function getWeatherInfo(code) {
+                const map = {
+                    0: { description: 'Clear sky', emoji: '☀️' },
+                    1: { description: 'Mainly clear', emoji: '🌤️' },
+                    2: { description: 'Partly cloudy', emoji: '⛅' },
+                    3: { description: 'Overcast', emoji: '☁️' },
+                    45: { description: 'Fog', emoji: '🌫️' },
+                    48: { description: 'Depositing rime fog', emoji: '🌫️' },
+                    51: { description: 'Light drizzle', emoji: '🌦️' },
+                    53: { description: 'Moderate drizzle', emoji: '🌦️' },
+                    55: { description: 'Dense drizzle', emoji: '🌧️' },
+                    56: { description: 'Light freezing drizzle', emoji: '🌧️' },
+                    57: { description: 'Dense freezing drizzle', emoji: '🌧️' },
+                    61: { description: 'Slight rain', emoji: '🌧️' },
+                    63: { description: 'Moderate rain', emoji: '🌧️' },
+                    65: { description: 'Heavy rain', emoji: '🌧️' },
+                    66: { description: 'Light freezing rain', emoji: '🌧️' },
+                    67: { description: 'Heavy freezing rain', emoji: '🌧️' },
+                    71: { description: 'Slight snow fall', emoji: '🌨️' },
+                    73: { description: 'Moderate snow fall', emoji: '🌨️' },
+                    75: { description: 'Heavy snow fall', emoji: '❄️' },
+                    77: { description: 'Snow grains', emoji: '❄️' },
+                    80: { description: 'Slight rain showers', emoji: '🌦️' },
+                    81: { description: 'Moderate rain showers', emoji: '🌧️' },
+                    82: { description: 'Violent rain showers', emoji: '⛈️' },
+                    85: { description: 'Slight snow showers', emoji: '🌨️' },
+                    86: { description: 'Heavy snow showers', emoji: '❄️' },
+                    95: { description: 'Thunderstorm', emoji: '⛈️' },
+                    96: { description: 'Thunderstorm with slight hail', emoji: '⛈️' },
+                    99: { description: 'Thunderstorm with heavy hail', emoji: '⛈️' },
+                };
+                return map[code] || { description: 'Unknown', emoji: '🌍' };
+            }
+
+            /**
+             * Fetch current weather for Suva from Open-Meteo.
+             * Open-Meteo is free, requires no API key, and supports CORS.
+             */
+            async function fetchWeather() {
+                // Construct the API URL with current weather parameters
+                const url =
+                    'https://api.open-meteo.com/v1/forecast' +
+                    '?latitude=' + SUVA_LAT +
+                    '&longitude=' + SUVA_LON +
+                    '&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m' +
+                    '&timezone=' + TIMEZONE;
+
+                try {
+                    const response = await fetch(url);
+
+                    // If the network request fails or returns an error status
+                    if (!response.ok) {
+                        throw new Error('HTTP error ' + response.status);
+                    }
+
+                    const data = await response.json();
+
+                    // Check that we have the expected data structure
+                    if (!data.current) {
+                        throw new Error('Missing current weather data');
+                    }
+
+                    const current = data.current;
+                    const temp = current.temperature_2m;
+                    const humidity = current.relative_humidity_2m;
+                    const windSpeed = current.wind_speed_10m;
+                    const weatherCode = current.weather_code;
+                    const time = current.time;
+
+                    // Get human-readable info from the weather code
+                    const info = getWeatherInfo(weatherCode);
+
+                    // Build the weather display HTML
+                    const html = `
+                            <div class="weather-data">
+                                <div class="weather-main">
+                                    <span class="weather-icon-big">${info.emoji}</span>
+                                    <div>
+                                        <div class="weather-temp">
+                                            ${Math.round(temp)}<span class="unit">°C</span>
+                                        </div>
+                                        <div class="weather-condition">${info.description}</div>
+                                    </div>
+                                </div>
+                                <div class="weather-details">
+                                    <div class="weather-detail-item">
+                                        <span>💧</span>
+                                        <span class="label">Humidity</span>
+                                        <span class="value">${humidity}%</span>
+                                    </div>
+                                    <div class="weather-detail-item">
+                                        <span>💨</span>
+                                        <span class="label">Wind</span>
+                                        <span class="value">${Math.round(windSpeed)} km/h</span>
+                                    </div>
+                                    <div class="weather-detail-item">
+                                        <span>📅</span>
+                                        <span class="label">Updated</span>
+                                        <span class="value">${time ? time.slice(5, 16) : 'today'}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+
+                    weatherContainer.innerHTML = html;
+
+                    // Update the footer timestamp
+                    const now = new Date();
+                    const fijiTime = now.toLocaleString('en-FJ', {
+                        timeZone: 'Pacific/Fiji',
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        second: '2-digit'
+                    });
+                    updateTimeEl.textContent = '🕒 Updated ' + fijiTime;
+
+                } catch (error) {
+                    // ----- WEATHER ERROR HANDLING -----
+                    // Show a user-friendly error message inside the weather card
+                    console.warn('Weather fetch failed:', error.message);
+                    weatherContainer.innerHTML = `
+                            <div class="weather-error">
+                                ⚠️ Could not load weather data.<br>
+                                <span style="font-size:0.85rem;color:#4a7a94;">
+                                    Please check your internet connection and try again.
+                                </span>
+                                <br><br>
+                                <button class="btn" style="padding:8px 20px;font-size:0.9rem;" id="retryWeatherBtn">
+                                    🔄 Retry
+                                </button>
+                            </div>
+                        `;
+
+                    // Attach a retry handler to the newly created button
+                    const retryBtn = document.getElementById('retryWeatherBtn');
+                    if (retryBtn) {
+                        retryBtn.addEventListener('click', function() {
+                            weatherContainer.innerHTML =
+                                '<div class="weather-loading"><span class="spinner"></span> Loading weather data…</div>';
+                            fetchWeather();
+                        });
+                    }
+
+                    // Still update the footer with a fallback time
+                    const now = new Date();
+                    updateTimeEl.textContent = '🕒 ' + now.toLocaleString('en-FJ', {
+                        timeZone: 'Pacific/Fiji',
+                        dateStyle: 'medium',
+                        timeStyle: 'short'
+                    });
+                }
+            }
+
+            // ----- 3. INITIALISE WEATHER ON PAGE LOAD -----
+            fetchWeather();
+
+            // Optionally refresh weather every 5 minutes (300,000 ms)
+            // to keep the forecast current without user action.
+            setInterval(fetchWeather, 300000);
+
+            // Also allow manual refresh by clicking the weather card title
+            // (convenience for the user)
+            const weatherCardTitle = document.querySelector('.card:last-child .card-title');
+            if (weatherCardTitle) {
+                weatherCardTitle.style.cursor = 'pointer';
+                weatherCardTitle.title = 'Click to refresh weather';
+                weatherCardTitle.addEventListener('click', function() {
+                    weatherContainer.innerHTML =
+                        '<div class="weather-loading"><span class="spinner"></span> Refreshing weather…</div>';
+                    fetchWeather();
+                });
+            }
+
+        })();
+        /* ----- END OF JAVASCRIPT ----- */
+    </script>
+
+</body>
+</html>
